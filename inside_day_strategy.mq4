@@ -17,8 +17,6 @@ void OnDeinit(const int reason) {
 }
 
 void OnTick() {
-	// if (Bars == last_bar) return;
-
 	if (OrdersTotal() == 0 && low_volatility() && last_bar != last_initiated_bar) {
 		int condition = meet_condition();
 		if (condition != -1) {
@@ -85,16 +83,6 @@ int meet_condition() {
 			High[2 + i] > High[1 + i] && High[3 + i] > High[2 + i] &&
 			Low[2 + i] < Low[1 + i] && Low[3 + i] < Low[2 + i];
 		if (has_inside_bar_sequence) return i;
-		// if (!has_inside_bar_sequence) continue;
-
-		// bool following_bars_not_too_volatile = true;
-		// for (int j = 0; j < i; j++) {
-		// 	if (!(High[3 + i] > High[1] && Low[3 + i] < Low[1])) {
-		// 		following_bars_not_too_volatile = false;
-		// 		break;
-		// 	}
-		// }
-		// if (following_bars_not_too_volatile) return i;
 	}
 
 	return -1;
