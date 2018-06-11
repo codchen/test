@@ -17,9 +17,9 @@ void OnDeinit(const int reason) {
 }
 
 void OnTick() {
-	if (OrdersTotal() == 0 && low_volatility() && last_bar != last_initiated_bar) {
+	if (OrdersTotal() == 0 && low_volatility()) {
 		int condition = meet_condition();
-		if (condition != -1) {
+		if (condition != -1 && last_initiated_bar != last_bar - conditon) {
 			if (Ask >= High[1 + condition] + delta() * Point) {
 				sl = Low[1 + condition] - delta() * Point;
 				stop_and_reverse_sl = High[1 + condition] + delta() * Point;
