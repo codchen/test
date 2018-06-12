@@ -22,35 +22,29 @@ void OnTick() {
 	if (OrdersTotal() == 0 && low_volatility()) {
 		int condition = meet_condition();
 		if (condition != -1) {
-			if (last_occurrence != Bars - condition - 1) {
-				status = 0;
-				last_occurrence = Bars - condition - 1;
-			}
-			if (status == 0 || status == 1) {
-				if (Ask >= High[1 + condition] + delta() * Point) {
-					sl = Low[1 + condition] - delta() * Point;
-					stop_and_reverse_sl = High[1 + condition] + delta() * Point;
-					double risk = Ask + delta() * Point - Low[1 + condition];
+			if (Ask >= High[1 + condition] + delta() * Point) {
+				sl = Low[1 + condition] - delta() * Point;
+				stop_and_reverse_sl = High[1 + condition] + delta() * Point;
+				double risk = Ask + delta() * Point - Low[1 + condition];
 
-					if (risk <= 1000 * Point) {
-						double tp = Ask + 2 * risk;
-						OrderSend(NULL, OP_BUY, 0.1, Ask, 5, 0.0001, tp, "Long 1", 0, 0, Purple);
+				if (risk <= 1000 * Point) {
+					double tp = Ask + 2 * risk;
+					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, 0.0001, tp, "Long 1", 0, 0, Purple);
 
-						status = 1;
-					}
+					status = 1;
 				}
+			}
 
-				if (Bid <= Low[1 + condition] - delta() * Point) {
-					sl = High[1 + condition] + delta() * Point;
-					stop_and_reverse_sl = Low[1 + condition] - delta() * Point;
-					double risk = High[1 + condition] + delta() * Point - Bid;
+			if (Bid <= Low[1 + condition] - delta() * Point) {
+				sl = High[1 + condition] + delta() * Point;
+				stop_and_reverse_sl = Low[1 + condition] - delta() * Point;
+				double risk = High[1 + condition] + delta() * Point - Bid;
 
-					if (risk <= 1000 * Point) {
-						double tp = Bid - 2 * risk;
-						OrderSend(NULL, OP_SELL, 0.1, Bid, 5, 10, tp, "Short 1", 0, 0, Purple);
+				if (risk <= 1000 * Point) {
+					double tp = Bid - 2 * risk;
+					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, 10, tp, "Short 1", 0, 0, Purple);
 
-						status = 1;
-					}
+					status = 1;
 				}
 			}
 		}
@@ -63,16 +57,12 @@ void OnTick() {
 					double tp = Bid - (OrderOpenPrice() - Bid) * 2; 
 					OrderClose(OrderTicket(), OrderLots(), Bid, 5, Green);
 					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, stop_and_reverse_sl, tp, "Short 2", 1, 0, Red);
-
-					status = 2;
 				}
 			} else {
 				if (Ask >= sl) {
 					double tp = Ask + (Ask - OrderOpenPrice()) * 2; 
 					OrderClose(OrderTicket(), OrderLots(), Ask, 5, Green);
 					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, stop_and_reverse_sl, tp, "Long 2", 1, 0, Red);
-
-					status = 2;
 				}
 			}
 		}
@@ -83,10 +73,11 @@ void OnTick() {
 
 double delta() {
 	return 100;
+	// return iATR(NULL, PERIOD_D1, 14, 1) / Point;
 }
 
 bool low_volatility() {
-	return iATR(NULL, PERIOD_D1, 14, 1) < 0.02 / (Ask + Bid);
+	return iATR(NULL, PERIOD_D1, 14, 1) < 0.01 / current_mid_price();
 }
 
 int meet_condition() {
@@ -98,4 +89,12 @@ int meet_condition() {
 	}
 
 	return -1;
+}
+
+double sma200() {
+	return iMA(NULL, PERIOD_D1, 200, 0, MODE_SMA, PRICE_CLOSE, 1);
+}
+
+double current_mid_price() {
+	return (Ask + Bid) / 2;
 }
