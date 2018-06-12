@@ -25,9 +25,9 @@ void OnTick() {
 	if (OrdersTotal() == 0 && low_volatility() && last_bar != last_initiated_bar) {
 		int condition = meet_condition();
 		if (condition != -1) {
-			if (Ask >= High[1 + condition] + delta() * Point) {
-				sl = Low[1 + condition] - delta() * Point;
-				stop_and_reverse_sl = High[1 + condition] + delta() * Point;
+			if (Ask >= High[2 + condition] + delta() * Point) {
+				sl = Low[2 + condition] - delta() * Point;
+				stop_and_reverse_sl = High[2 + condition] + delta() * Point;
 				double risk = Ask - sl;
 
 				if (risk <= 1000 * Point) {
@@ -37,9 +37,9 @@ void OnTick() {
 				}
 			}
 
-			if (Bid <= Low[1 + condition] - delta() * Point) {
-				sl = High[1 + condition] + delta() * Point;
-				stop_and_reverse_sl = Low[1 + condition] - delta() * Point;
+			if (Bid <= Low[2 + condition] - delta() * Point) {
+				sl = High[2 + condition] + delta() * Point;
+				stop_and_reverse_sl = Low[2 + condition] - delta() * Point;
 				double risk = sl - Bid;
 
 				if (risk <= 1000 * Point) {
