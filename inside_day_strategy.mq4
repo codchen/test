@@ -30,7 +30,7 @@ void OnTick() {
 				stop_and_reverse_sl = High[2 + condition] + delta() * Point;
 				double risk = Ask - sl;
 
-				if (risk <= 1000 * Point) {
+				if (risk <= 1500 * Point) {
 					tp = Ask + 2 * risk;
 					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, 0.0001, 10, "Long 1", 0, 0, Purple);
 					last_initiated_bar = last_bar;
@@ -42,7 +42,7 @@ void OnTick() {
 				stop_and_reverse_sl = Low[2 + condition] - delta() * Point;
 				double risk = sl - Bid;
 
-				if (risk <= 1000 * Point) {
+				if (risk <= 1500 * Point) {
 					tp = Bid - 2 * risk;
 					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, 10, 0.0001, "Short 1", 0, 0, Purple);
 					last_initiated_bar = last_bar;
