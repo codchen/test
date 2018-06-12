@@ -4,8 +4,11 @@
 #property strict
 
 int last_bar = 0;
+int last_initiated_bar = 0;
 double sl = 0;
+double tp = 0;
 double stop_and_reverse_sl = 0;
+double stop_and_reverse_tp = 0;
 
 int status = 0;
 int last_occurrence = 0;
@@ -19,51 +22,79 @@ void OnDeinit(const int reason) {
 }
 
 void OnTick() {
-	if (OrdersTotal() == 0 && low_volatility()) {
+	if (OrdersTotal() == 0 && low_volatility() && last_bar != last_initiated_bar) {
 		int condition = meet_condition();
 		if (condition != -1) {
 			if (Ask >= High[1 + condition] + delta() * Point) {
 				sl = Low[1 + condition] - delta() * Point;
 				stop_and_reverse_sl = High[1 + condition] + delta() * Point;
-				double risk = Ask + delta() * Point - Low[1 + condition];
+				double risk = Ask - sl;
 
 				if (risk <= 1000 * Point) {
-					double tp = Ask + 2 * risk;
-					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, 0.0001, tp, "Long 1", 0, 0, Purple);
-
-					status = 1;
+					tp = Ask + 2 * risk;
+					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, 0.0001, 10, "Long 1", 0, 0, Purple);
+					last_initiated_bar = last_bar;
 				}
 			}
 
 			if (Bid <= Low[1 + condition] - delta() * Point) {
 				sl = High[1 + condition] + delta() * Point;
 				stop_and_reverse_sl = Low[1 + condition] - delta() * Point;
-				double risk = High[1 + condition] + delta() * Point - Bid;
+				double risk = sl - Bid;
 
 				if (risk <= 1000 * Point) {
-					double tp = Bid - 2 * risk;
-					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, 10, tp, "Short 1", 0, 0, Purple);
-
-					status = 1;
+					tp = Bid - 2 * risk;
+					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, 10, 0.0001, "Short 1", 0, 0, Purple);
+					last_initiated_bar = last_bar;
 				}
 			}
 		}
 	} else {
 		OrderSelect(0, SELECT_BY_POS);
 
-		if (OrderMagicNumber() == 0) {
-			if (OrderType() == OP_BUY) {
-				if (Bid <= sl) {
-					double tp = Bid - (OrderOpenPrice() - Bid) * 2; 
-					OrderClose(OrderTicket(), OrderLots(), Bid, 5, Green);
-					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, stop_and_reverse_sl, tp, "Short 2", 1, 0, Red);
+		if (OrderLots() >= 0.1) {
+			if (OrderMagicNumber() == 0) {
+				if (OrderType() == OP_BUY) {
+					if (Bid <= sl) {
+						stop_and_reverse_tp = Bid - (OrderOpenPrice() - Bid) * 2; 
+						OrderClose(OrderTicket(), OrderLots(), Bid, 5, Green);
+						OrderSend(NULL, OP_SELL, 0.1, Bid, 5, stop_and_reverse_sl, 0.0001, "Short 2", 1, 0, Red);
+					} else if (Bid >= tp) {
+						OrderClose(OrderTicket(), OrderLots() / 2, Bid, 5, Yellow);
+						OrderSelect(0, SELECT_BY_POS);
+						OrderModify(OrderTicket(), OrderOpenPrice(), MathMax(OrderOpenPrice(), MathMin(Low[1], Low[2])), 10, 0, Orange);
+					}
+				} else {
+					if (Ask >= sl) {
+						stop_and_reverse_tp = Ask + (Ask - OrderOpenPrice()) * 2; 
+						OrderClose(OrderTicket(), OrderLots(), Ask, 5, Green);
+						OrderSend(NULL, OP_BUY, 0.1, Ask, 5, stop_and_reverse_sl, 10, "Long 2", 1, 0, Red);
+					} else if (Ask <= tp) {
+						OrderClose(OrderTicket(), OrderLots() / 2, Ask, 5, Yellow);
+						OrderSelect(0, SELECT_BY_POS);
+						OrderModify(OrderTicket(), OrderOpenPrice(), MathMin(OrderOpenPrice(), MathMax(High[1], High[2])), 0.0001, 0, Orange);
+					}
 				}
 			} else {
-				if (Ask >= sl) {
-					double tp = Ask + (Ask - OrderOpenPrice()) * 2; 
-					OrderClose(OrderTicket(), OrderLots(), Ask, 5, Green);
-					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, stop_and_reverse_sl, tp, "Long 2", 1, 0, Red);
+				if (OrderType() == OP_BUY) {
+					if (Bid >= stop_and_reverse_tp) {
+						OrderClose(OrderTicket(), OrderLots() / 2, Bid, 5, Yellow);
+						OrderSelect(0, SELECT_BY_POS);
+						OrderModify(OrderTicket(), OrderOpenPrice(), MathMax(OrderOpenPrice(), MathMin(Low[1], Low[2])), 10, 0, Orange);
+					}
+				} else {
+					if (Ask <= stop_and_reverse_tp) {
+						OrderClose(OrderTicket(), OrderLots() / 2, Ask, 5, Yellow);
+						OrderSelect(0, SELECT_BY_POS);
+						OrderModify(OrderTicket(), OrderOpenPrice(), MathMin(OrderOpenPrice(), MathMax(High[1], High[2])), 0.0001, 0, Orange);
+					}
 				}
+			}
+		} else {
+			if (OrderType() == OP_BUY) {
+				OrderModify(OrderTicket(), OrderOpenPrice(), MathMax(OrderStopLoss(), MathMin(Low[1], Low[2])), 10, 0, Orange);
+			} else {
+				OrderModify(OrderTicket(), OrderOpenPrice(), MathMin(OrderStopLoss(), MathMax(High[1], High[2])), 0.0001, 0, Orange);
 			}
 		}
 	}
@@ -81,7 +112,7 @@ bool low_volatility() {
 }
 
 int meet_condition() {
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < 2; i++) {
 		bool has_inside_bar_sequence = High[1 + i] - Low[i + 1] < 0.05 &&
 			High[2 + i] > High[1 + i] && High[3 + i] > High[2 + i] &&
 			Low[2 + i] < Low[1 + i] && Low[3 + i] < Low[2 + i];
