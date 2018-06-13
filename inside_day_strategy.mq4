@@ -32,7 +32,7 @@ void OnTick() {
 
 				if (risk <= 1500 * Point) {
 					tp = Ask + 2 * risk;
-					OrderSend(NULL, OP_BUY, 0.1, Ask, 5, 0.0001, 10, "Long 1", 0, 0, Purple);
+					OrderSend(NULL, OP_BUY, 0.0015 / risk, Ask, 5, 0.0001, 10, "Long 1", 0, 0, Purple);
 					last_initiated_bar = last_bar;
 				}
 			}
@@ -44,7 +44,7 @@ void OnTick() {
 
 				if (risk <= 1500 * Point) {
 					tp = Bid - 2 * risk;
-					OrderSend(NULL, OP_SELL, 0.1, Bid, 5, 10, 0.0001, "Short 1", 0, 0, Purple);
+					OrderSend(NULL, OP_SELL, 0.0015 / risk, Bid, 5, 10, 0.0001, "Short 1", 0, 0, Purple);
 					last_initiated_bar = last_bar;
 				}
 			}
@@ -56,9 +56,10 @@ void OnTick() {
 			if (OrderMagicNumber() == 0) {
 				if (OrderType() == OP_BUY) {
 					if (Bid <= sl) {
-						stop_and_reverse_tp = Bid - (OrderOpenPrice() - Bid) * 2; 
-						OrderClose(OrderTicket(), OrderLots(), Bid, 5, Green);
-						OrderSend(NULL, OP_SELL, 0.1, Bid, 5, stop_and_reverse_sl, 0.0001, "Short 2", 1, 0, Red);
+						stop_and_reverse_tp = Bid - (OrderOpenPrice() - Bid) * 2;
+						double old_lots = OrderLots();
+						OrderClose(OrderTicket(), old_lots, Bid, 5, Green);
+						OrderSend(NULL, OP_SELL, old_lots, Bid, 5, stop_and_reverse_sl, 0.0001, "Short 2", 1, 0, Red);
 					} else if (Bid >= tp) {
 						OrderClose(OrderTicket(), OrderLots() / 2, Bid, 5, Yellow);
 						OrderSelect(0, SELECT_BY_POS);
@@ -66,9 +67,10 @@ void OnTick() {
 					}
 				} else {
 					if (Ask >= sl) {
-						stop_and_reverse_tp = Ask + (Ask - OrderOpenPrice()) * 2; 
-						OrderClose(OrderTicket(), OrderLots(), Ask, 5, Green);
-						OrderSend(NULL, OP_BUY, 0.1, Ask, 5, stop_and_reverse_sl, 10, "Long 2", 1, 0, Red);
+						stop_and_reverse_tp = Ask + (Ask - OrderOpenPrice()) * 2;
+						double old_lots = OrderLots();
+						OrderClose(OrderTicket(), old_lots, Ask, 5, Green);
+						OrderSend(NULL, OP_BUY, old_lots, Ask, 5, stop_and_reverse_sl, 10, "Long 2", 1, 0, Red);
 					} else if (Ask <= tp) {
 						OrderClose(OrderTicket(), OrderLots() / 2, Ask, 5, Yellow);
 						OrderSelect(0, SELECT_BY_POS);
